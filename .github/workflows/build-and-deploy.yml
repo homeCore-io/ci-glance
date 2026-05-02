@@ -1,0 +1,60 @@
+name: Build and deploy dashboard
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "config.yml"
+      - "templates/**"
+      - "static/**"
+      - "ci_glance/**"
+      - "generate.py"
+      - "requirements.txt"
+      - ".github/workflows/build-and-deploy.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - run: python generate.py
+        env:
+          # Provide DASH_TOKEN (a fine-grained PAT with Actions:read on the
+          # repos you want to track) as a repo secret to track repos other
+          # than this one. Falls back to the auto-injected GITHUB_TOKEN,
+          # which only has access to the current repo.
+          GITHUB_TOKEN: ${{ secrets.DASH_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

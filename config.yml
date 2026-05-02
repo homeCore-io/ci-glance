@@ -1,0 +1,38 @@
+# ci-glance dashboard configuration.
+# Edit this file to point at your own repos and workflows, then run
+# `python generate.py` (or let the bundled GitHub Action do it for you).
+
+title: My Builds
+subtitle: "Workflow status across my repos"
+# footer: "Custom footer text — leave empty for the default 'Last Updated ...'"
+
+# Optional theme overrides for the sparkline colors.
+# theme:
+#   ok:    "#1D9E75"
+#   fail:  "#E24B4A"
+#   flaky: "#BA7517"
+
+settings:
+  history_length: 20      # number of runs per sparkline
+  flaky_threshold: 2      # failures in history to flag as FLAKY
+  sort: failing-first     # failing-first | config | alpha
+  refresh_seconds: 300    # auto-reload every N seconds (0 to disable)
+  timezone: America/New_York
+
+# Reusable workflow definitions, referenced by `id` from each repo below.
+workflows:
+  - id: ci
+    file: ci.yml          # filename in .github/workflows/
+    label: CI
+    last_label: time      # time | version | branch | sha
+
+  - id: release
+    file: release.yml
+    label: Rel
+    last_label: version
+
+# Repos to track. Replace these with your own org/repo paths.
+# Each entry can list a subset of workflow ids if not all apply.
+repos:
+  - { repo: your-org/your-repo,    workflows: [ci, release] }
+  - { repo: your-org/another-repo, workflows: [ci] }

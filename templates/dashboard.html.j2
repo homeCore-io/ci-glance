@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ cfg.title }}</title>
+{% if cfg.settings.refresh_seconds and cfg.settings.refresh_seconds > 0 %}
+<meta http-equiv="refresh" content="{{ cfg.settings.refresh_seconds }}">
+{% endif %}
+<link rel="stylesheet" href="dashboard.css">
+<style>
+  :root {
+    --spark-ok: {{ cfg.theme.ok }};
+    --spark-fail: {{ cfg.theme.fail }};
+    --spark-flaky: {{ cfg.theme.flaky }};
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="dash-frame">
+
+    <div class="dash-header">
+      <div>
+        <div class="dash-title">{{ cfg.title }}</div>
+        {% if cfg.subtitle %}
+        <div class="dash-subtitle">{{ cfg.subtitle }}</div>
+        {% endif %}
+        <div class="dash-summary">
+          <span class="s-ok">{{ summary.OK }} passing</span> ·
+          <span class="s-flaky">{{ summary.FLAKY }} flaky</span> ·
+          <span class="s-fail">{{ summary.FAIL }} failing</span>
+          {%- if summary['—'] %} · <span class="s-none">{{ summary['—'] }} unknown</span>{% endif %}
+        </div>
+      </div>
+      <div class="dash-sync">synced {{ synced }}</div>
+    </div>
+
+    <div class="dash-card">
+      <div class="dash-head">
+        <div>Repository</div>
+        <div>Flow</div>
+        <div>History</div>
+        <div>Last</div>
+        <div style="text-align: right;">State</div>
+      </div>
+
+      {% for repo in repos %}
+      <div class="repo-block">
+        {% for wf in repo.workflows %}
+        <div class="wf-row">
+          {% if loop.first %}
+          <a class="repo-name" href="{{ repo.url }}">{{ repo.name }}</a>
+          {% else %}
+          <div></div>
+          {% endif %}
+          <div class="wf-label">{{ wf.label }}</div>
+          <div class="spark">
+            {%- for run in wf.history -%}
+              {%- if run.status == 'none' -%}
+                <span class="none" aria-hidden="true"></span>
+              {%- else -%}
+                <a class="{{ run.status }}" href="{{ run.url }}" aria-label="{{ wf.label }} run #{{ run.id }} — {{ run.status }} — {{ run.created_at }}" title="{{ run.status }} · {{ run.created_at }} · {{ run.head_branch }}"></a>
+              {%- endif -%}
+            {%- endfor -%}
+          </div>
+          <div class="ts">{{ wf.last_label }}</div>
+          <div class="state s-{{ wf.state_class }}">{{ wf.state }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+
+    </div>
+
+    <div class="footer">
+      {% if cfg.footer %}{{ cfg.footer }}{% else %}Last Updated {{ last_updated }} ({{ cfg.settings.timezone }}){% endif %}
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
