@@ -2,8 +2,8 @@
 # Edit this file to point at your own repos and workflows, then run
 # `python generate.py` (or let the bundled GitHub Action do it for you).
 
-title: My Builds
-subtitle: "Workflow status across my repos"
+title: homeCore Builds
+subtitle: "Workflow status across homeCore repositories"
 # footer: "Custom footer text — leave empty for the default 'Last Updated ...'"
 
 # Optional theme overrides for the sparkline colors.
@@ -31,8 +31,26 @@ workflows:
     label: Rel
     last_label: version
 
-# Repos to track. Replace these with your own org/repo paths.
-# Each entry can list a subset of workflow ids if not all apply.
+# Repos to track. Each entry can list a subset of workflow ids if not all apply.
 repos:
-  - { repo: your-org/your-repo,    workflows: [ci, release] }
-  - { repo: your-org/another-repo, workflows: [ci] }
+  # ── Core ──────────────────────────────────────────────────────────────
+  - { repo: homeCore-io/homeCore,      workflows: [ci, release] }
+
+  # ── Plugins ───────────────────────────────────────────────────────────
+  - { repo: homeCore-io/hc-hue,        workflows: [ci, release] }
+  - { repo: homeCore-io/hc-yolink,     workflows: [ci, release] }
+  - { repo: homeCore-io/hc-lutron,     workflows: [ci, release] }
+  - { repo: homeCore-io/hc-sonos,      workflows: [ci, release] }
+  - { repo: homeCore-io/hc-wled,       workflows: [ci, release] }
+  - { repo: homeCore-io/hc-isy,        workflows: [ci, release] }
+  - { repo: homeCore-io/hc-zwave,      workflows: [ci, release] }
+  - { repo: homeCore-io/hc-caseta,     workflows: [ci, release] }
+  - { repo: homeCore-io/hc-thermostat, workflows: [ci, release] }
+  - { repo: homeCore-io/hc-ecowitt,    workflows: [ci, release] }
+
+  # ── Clients ───────────────────────────────────────────────────────────
+  - { repo: homeCore-io/hc-tui,        workflows: [ci, release] }
+
+  # Repos without CI/Release workflows yet (omitted until wired):
+  #   hc-plugin-sdk-rs, hc-captest, hc-scripts (reusable workflows only),
+  #   hc-web-leptos, hc-mcp, plus the inactive client variants.
