@@ -50,7 +50,8 @@ repos:
 
   # ── Clients ───────────────────────────────────────────────────────────
   - { repo: homeCore-io/hc-tui,        workflows: [ci, release] }
+  - { repo: homeCore-io/hc-web-leptos, workflows: [ci] }
 
   # Repos without CI/Release workflows yet (omitted until wired):
   #   hc-plugin-sdk-rs, hc-captest, hc-scripts (reusable workflows only),
-  #   hc-web-leptos, hc-mcp, plus the inactive client variants.
+  #   hc-mcp, plus the inactive client variants.
