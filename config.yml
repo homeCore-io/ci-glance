@@ -52,6 +52,7 @@ repos:
   - { repo: homeCore-io/hc-caseta,     workflows: [ci, release] }
   - { repo: homeCore-io/hc-thermostat, workflows: [ci, release] }
   - { repo: homeCore-io/hc-ecowitt,    workflows: [ci, release] }
+  - { repo: homeCore-io/hc-roku,       workflows: [ci, release] }
 
   # ── Clients ───────────────────────────────────────────────────────────
   - { repo: homeCore-io/hc-tui,        workflows: [ci, release] }
