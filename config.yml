@@ -31,11 +31,6 @@ workflows:
     label: Rel
     last_label: version
 
-  - id: appliance
-    file: appliance-release.yml
-    label: Appl
-    last_label: version
-
 # Repos to track. Each entry can list a subset of workflow ids if not all apply.
 repos:
   # ── Core ──────────────────────────────────────────────────────────────
@@ -55,11 +50,17 @@ repos:
   - { repo: homeCore-io/hc-roku,       workflows: [ci, release] }
 
   # ── Clients ───────────────────────────────────────────────────────────
+  # hc-web is the web UI and ships as its own container — the other half of
+  # the deployed stack alongside hc-core, so its red is as important as core's.
+  - { repo: homeCore-io/hc-web,        workflows: [ci, release] }
   - { repo: homeCore-io/hc-tui,        workflows: [ci, release] }
   - { repo: homeCore-io/hc-web-leptos, workflows: [ci] }
 
-  # ── Distribution ──────────────────────────────────────────────────────
-  - { repo: homeCore-io/docker,        workflows: [appliance] }
+  # homeCore-io/docker used to be tracked for its appliance build. The
+  # appliance is retired and appliance-release.yml is deleted, so that entry
+  # watched a workflow that no longer exists — a permanently blank column.
+  # The repo now only holds the Dockerfile and compose files; it builds
+  # nothing of its own, so there is nothing here to track.
 
   # Repos without CI/Release workflows yet (omitted until wired):
   #   hc-plugin-sdk-rs, hc-captest, hc-scripts (reusable workflows only),
