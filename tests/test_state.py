@@ -49,3 +49,53 @@ def test_normalize_conclusion():
     assert normalize_conclusion("skipped") == "cancelled"
     assert normalize_conclusion(None) == "in_progress"
     assert normalize_conclusion("something_unknown") == "cancelled"
+
+
+# ── FLAKY is not permanent ──────────────────────────────────────────────────
+#
+# Counting every failure in the window meant two reds stuck to a repo forever.
+# Fourteen of fifteen repos on the live board read FLAKY, several of them
+# green for their last dozen runs, so the column carried no signal at all.
+
+
+def test_a_green_streak_clears_an_old_flaky():
+    history = _h("fail", "fail", *(["ok"] * 6))
+    assert derive_state(history, flaky_threshold=2, recovery_streak=5) == "OK"
+
+
+def test_a_recent_failure_keeps_it_flaky():
+    # Green tail, but not long enough to have earned it back.
+    history = _h(*(["ok"] * 10), "fail", "fail", "ok", "ok")
+    assert derive_state(history, flaky_threshold=2, recovery_streak=5) == "FLAKY"
+
+
+def test_the_streak_must_be_unbroken():
+    history = _h("fail", "fail", "ok", "ok", "fail", "ok", "ok", "ok")
+    assert derive_state(history, flaky_threshold=2, recovery_streak=5) == "FLAKY"
+
+
+def test_a_red_last_run_is_still_fail_however_long_the_history():
+    history = _h(*(["ok"] * 19), "fail")
+    assert derive_state(history, flaky_threshold=2, recovery_streak=5) == "FAIL"
+
+
+def test_too_few_runs_to_prove_recovery_stays_flaky():
+    # Three greens cannot satisfy a five-run streak; do not round up.
+    history = _h("fail", "fail", "ok", "ok", "ok")
+    assert derive_state(history, flaky_threshold=2, recovery_streak=5) == "FLAKY"
+
+
+def test_zero_streak_restores_the_never_forget_behaviour():
+    history = _h("fail", "fail", *(["ok"] * 18))
+    assert derive_state(history, flaky_threshold=2, recovery_streak=0) == "FLAKY"
+
+
+def test_pads_and_in_progress_do_not_break_the_streak():
+    # A run still building sits between the greens; it is not a failure and
+    # must not count as one, nor pad the streak out.
+    history = [
+        {"status": "fail"}, {"status": "fail"},
+        {"status": "ok"}, {"status": "ok"}, {"status": "in_progress"},
+        {"status": "ok"}, {"status": "ok"}, {"status": "ok"},
+    ]
+    assert derive_state(history, flaky_threshold=2, recovery_streak=5) == "OK"

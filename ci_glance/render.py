@@ -93,7 +93,11 @@ def build_repo_view(cfg: Config, repo, workflow_data: dict, idx: int) -> dict:
                 ),
                 last_real,
             )
-        state = derive_state(history, cfg.settings.flaky_threshold)
+        state = derive_state(
+            history,
+            cfg.settings.flaky_threshold,
+            cfg.settings.recovery_streak,
+        )
         rendered.append({
             "id": wf.id,
             "label": wf.label,
