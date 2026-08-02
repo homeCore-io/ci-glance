@@ -14,9 +14,17 @@ suitable for GitHub Pages or any static host.
    clone your new copy.
 2. Edit `config.yml` — set the title and list the repos and workflows you
    want to track.
-3. Create a fine-grained personal access token with `Actions: read` and
-   `Metadata: read` on those repos. Add it as a repository secret named
-   `DASH_TOKEN`.
+3. **Public repos need no token.** The workflow's built-in `GITHUB_TOKEN`
+   reads the Actions API of any public repo at 1,000 requests/hour, which
+   is ample — a 15-repo board costs ~29 requests per run.
+
+   To track **private** repos, create a fine-grained personal access token
+   with `Actions: read` and `Metadata: read` on them, add it as a secret
+   named `DASH_TOKEN`, and reference it in
+   `.github/workflows/build-and-deploy.yml`. Grant it those permissions on
+   *every* repo in `config.yml`, not just the private ones: the token
+   replaces the built-in one rather than supplementing it, so any repo it
+   cannot read drops off the board.
 4. In the repo's settings: **Pages → Build and deployment → Source →
    GitHub Actions**.
 5. The bundled workflow runs every 15 minutes and publishes your dashboard
@@ -29,7 +37,9 @@ the Actions tab, or push any change to `main`.
 
 ```sh
 pip install -r requirements.txt
-export GITHUB_TOKEN=ghp_...
+# Optional for public repos, but worth setting: without a token you get the
+# 60/hour anonymous limit, which a 15-repo board exhausts in three runs.
+export GITHUB_TOKEN=$(gh auth token)
 python generate.py
 # open html/index.html
 ```
@@ -45,6 +55,7 @@ subtitle: "Workflow status across my repos"
 settings:
   history_length: 20      # runs per sparkline
   flaky_threshold: 2      # failures to flag as FLAKY
+  recovery_streak: 5      # consecutive green runs that clear FLAKY (0 = never)
   sort: failing-first     # failing-first | config | alpha
   refresh_seconds: 300    # auto-reload (0 = disable)
   timezone: America/New_York

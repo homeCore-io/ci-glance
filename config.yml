@@ -15,6 +15,7 @@ subtitle: "Workflow status across homeCore repositories"
 settings:
   history_length: 20      # number of runs per sparkline
   flaky_threshold: 2      # failures in history to flag as FLAKY
+  recovery_streak: 5      # consecutive green runs that clear FLAKY (0 = never)
   sort: failing-first     # failing-first | config | alpha
   refresh_seconds: 300    # auto-reload every N seconds (0 to disable)
   timezone: America/New_York
