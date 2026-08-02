@@ -12,6 +12,9 @@ from ci_glance.config import Config, Workflow
 from ci_glance.state import COMPLETED, derive_state
 
 VERSION_RE = re.compile(r"v?\d+\.\d+(?:\.\d+)?")
+# A tag push reports the tag as its head_branch — "v0.1.18" — which is the
+# released version stated outright rather than guessed from a commit message.
+TAG_BRANCH_RE = re.compile(r"^v?\d+\.\d+(?:\.\d+)?$")
 STATE_RANK = {"FAIL": 0, "FLAKY": 1, "—": 2, "OK": 3}
 
 
@@ -28,12 +31,17 @@ def extract_label(run: dict, kind: str, tz: str) -> str:
         return ""
 
     if kind == "version":
+        # The tag is the version. Prefer it over parsing the commit message,
+        # which for a tag push is whatever the merge happened to be called.
+        branch = run.get("head_branch") or ""
+        if TAG_BRANCH_RE.match(branch):
+            return branch
         title = run.get("display_title") or ""
         m = VERSION_RE.search(title)
         if m:
             return m.group(0)
         # Fall back to branch, then short sha
-        return run.get("head_branch") or (run.get("head_sha") or "")[:7]
+        return branch or (run.get("head_sha") or "")[:7]
 
     if kind == "branch":
         return run.get("head_branch", "")
@@ -68,13 +76,31 @@ def build_repo_view(cfg: Config, repo, workflow_data: dict, idx: int) -> dict:
             (h for h in reversed(history) if h.get("status") in COMPLETED),
             None,
         )
+        # A "version" column wants the last *release*, not the last run.
+        # release.yml also fires on every develop push, so the newest run is
+        # usually a develop build whose commit message carries no version —
+        # which is why the column read "develop" for repos that had shipped
+        # perfectly good tags. Fall back to the newest run when a repo has
+        # never been tagged, so a young repo still shows something.
+        label_run = last_real
+        if wf.last_label == "version":
+            label_run = next(
+                (
+                    h
+                    for h in reversed(history)
+                    if h.get("status") in COMPLETED
+                    and TAG_BRANCH_RE.match(h.get("head_branch") or "")
+                ),
+                last_real,
+            )
         state = derive_state(history, cfg.settings.flaky_threshold)
         rendered.append({
             "id": wf.id,
             "label": wf.label,
             "history": history,
-            "last_label": extract_label(last_real or {}, wf.last_label, cfg.settings.timezone),
-            "last_url": (last_real or {}).get("url", ""),
+            "last_label": extract_label(
+                label_run or {}, wf.last_label, cfg.settings.timezone),
+            "last_url": (label_run or {}).get("url", ""),
             "state": state,
             "state_class": _state_class(state),
         })
