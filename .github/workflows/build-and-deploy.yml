@@ -39,11 +39,22 @@ jobs:
 
       - run: python generate.py
         env:
-          # Provide DASH_TOKEN (a fine-grained PAT with Actions:read on the
-          # repos you want to track) as a repo secret to track repos other
-          # than this one. Falls back to the auto-injected GITHUB_TOKEN,
-          # which only has access to the current repo.
-          GITHUB_TOKEN: ${{ secrets.DASH_TOKEN || secrets.GITHUB_TOKEN }}
+          # The auto-injected GITHUB_TOKEN reads the Actions API of any PUBLIC
+          # repo, not just this one — measured, not assumed: a run using only
+          # this token fetched all 29 workflows across 15 repos with zero
+          # failures, at 1,000 requests/hour.
+          #
+          # It used to prefer a DASH_TOKEN PAT, and that indirection is what
+          # kept breaking. `secrets.DASH_TOKEN || secrets.GITHUB_TOKEN` means a
+          # *present but broken* PAT shadows a working built-in token, so the
+          # board died twice for a reason that had nothing to do with the board:
+          # once on an expired PAT (401 on every repo) and once on a replacement
+          # that lacked Actions:read (403 on every repo).
+          #
+          # A PAT is only needed to track PRIVATE repos. If that day comes, add
+          # DASH_TOKEN back here — and give it Actions:read on every repo in
+          # config.yml, not just the private ones.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
