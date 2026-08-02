@@ -47,6 +47,8 @@ class Theme:
 class Settings:
     history_length: int = 20
     flaky_threshold: int = 2
+    # Consecutive green runs that clear a FLAKY flag. 0 = never forget.
+    recovery_streak: int = 5
     sort: str = "failing-first"
     refresh_seconds: int = 300
     timezone: str = "America/New_York"
@@ -83,7 +85,8 @@ def load_config(path: Path) -> Config:
     cfg.settings = Settings(
         **_filter_keys(
             raw.get("settings"),
-            {"history_length", "flaky_threshold", "sort", "refresh_seconds", "timezone"},
+            {"history_length", "flaky_threshold", "recovery_streak", "sort",
+             "refresh_seconds", "timezone"},
         )
     )
 
