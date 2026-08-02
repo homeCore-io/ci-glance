@@ -52,11 +52,14 @@ def main() -> int:
     by_id = cfg.workflow_by_id
     repo_views = []
     errors = 0
+    attempts = 0
+    auth_errors = 0
     for idx, repo in enumerate(cfg.repos):
         log.info("fetching %s", repo.repo)
         wf_data = {}
         for wf_id in repo.workflows:
             wf = by_id[wf_id]
+            attempts += 1
             runs, err = fetch_runs(
                 repo.owner,
                 repo.name,
@@ -67,10 +70,36 @@ def main() -> int:
             if err:
                 log.warning("  %s/%s: %s", repo.repo, wf.file, err)
                 errors += 1
+                if "401" in err or "403" in err:
+                    auth_errors += 1
                 wf_data[wf_id] = runs_to_history([], cfg.settings.history_length)
             else:
                 wf_data[wf_id] = runs_to_history(runs or [], cfg.settings.history_length)
         repo_views.append(build_repo_view(cfg, repo, wf_data, idx))
+
+    # Learning nothing is not the same as learning that everything is fine.
+    # Every fetch failing used to still render a page — an empty board, all
+    # dashes, published straight over a working one, with the deploy reporting
+    # success. An expired DASH_TOKEN looked exactly like a healthy estate with
+    # no repos in it. Bail before writing, so the last good board stays up.
+    if attempts and errors == attempts:
+        if auth_errors == errors:
+            log.error(
+                "every request was rejected (%d/%d auth failures). GITHUB_TOKEN "
+                "is missing, expired or lacks Actions:read on the tracked "
+                "repos — refusing to publish an empty dashboard over the "
+                "last good one.",
+                auth_errors,
+                attempts,
+            )
+        else:
+            log.error(
+                "every request failed (%d/%d) — refusing to publish an empty "
+                "dashboard over the last good one.",
+                errors,
+                attempts,
+            )
+        return 1
 
     out = render_dashboard(
         cfg,
@@ -79,7 +108,7 @@ def main() -> int:
         static_dir=static_dir,
         out_dir=out_dir,
     )
-    log.info("wrote %s (errors: %d)", out, errors)
+    log.info("wrote %s (%d/%d requests failed)", out, errors, attempts)
     return 0
 
 
